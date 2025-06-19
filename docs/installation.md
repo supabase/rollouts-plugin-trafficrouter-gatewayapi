@@ -11,7 +11,7 @@ Follow the [official instructions](https://argo-rollouts.readthedocs.io/en/stabl
 
 Optionally install the [Argo Rollouts CLI](https://argoproj.github.io/argo-rollouts/features/kubectl-plugin/) in order to control Rollouts from your terminal.
 
-## Installing the plugin via HTTP(S)
+## Installing the plugin
 
 To install the plugin create a configmap with the following syntax:
 
@@ -19,7 +19,7 @@ To install the plugin create a configmap with the following syntax:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: argo-rollouts-config # must be named like this
+  name: argo-rollouts-config # must be so name
   namespace: argo-rollouts # must be in this namespace
 data:
   trafficRouterPlugins: |-
@@ -35,7 +35,7 @@ For example for a Linux/x86 cluster save the following in a file of your choosin
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: argo-rollouts-config # must be named like this
+  name: argo-rollouts-config # must be so name
   namespace: argo-rollouts # must be in this namespace
 data:
   trafficRouterPlugins: |-
@@ -44,34 +44,6 @@ data:
 ```
 
 Deploy this file with `kubectl apply -f gateway-plugin.yml -n argo-rollouts`. You can also use [Argo CD](https://argoproj.github.io/cd/) or any other Kubernetes deployment method that you prefer.
-
-## Installing the plugin via init containers
-
-Use the [Argo Rollouts Helm chart](https://argoproj.github.io/argo-helm/) and change the [default values](https://artifacthub.io/packages/helm/argo/argo-rollouts):
-
-```yaml
-controller:
-    initContainers:                                   
-      - name: copy-gwapi-plugin
-        image: ghcr.io/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi:v0.5.0
-        command: ["/bin/sh", "-c"]                    
-        args:
-          - cp /bin/rollouts-plugin-trafficrouter-gatewayapi /plugins
-        volumeMounts:                                 
-          - name: gwapi-plugin
-            mountPath: /plugins
-    trafficRouterPlugins:
-      - name: argoproj-labs/gatewayAPI
-        location: "file:///plugins/rollouts-plugin-trafficrouter-gatewayapi"
-    volumes:                                           
-      - name: gwapi-plugin
-        emptyDir: {}
-    volumeMounts:                                      
-      - name: gwapi-plugin
-        mountPath: /plugins
-```        
-
-We publish [container images](https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/pkgs/container/rollouts-plugin-trafficrouter-gatewayapi) for both ARM and x86.
 
 For more installation options see the [Plugin documentation](https://argoproj.github.io/argo-rollouts/features/traffic-management/plugins/) at the main Argo Rollouts site.
 
@@ -99,12 +71,13 @@ values may need to be increased if you operate Argo Rollouts in a large cluster.
 using the `args` block of the plugin configuration:
 
 ```yaml
-  trafficRouterPlugins: |-
-    - name: "argoproj-labs/gatewayAPI"
-      location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/vX.X.X/gatewayapi-plugin-linux-amd64"
-      args:
-      - "-kubeClientQPS=40"
-      - "-kubeClientBurst=80"
+  trafficRouterPlugins:
+    trafficRouterPlugins: |-
+      - name: "argoproj-labs/gatewayAPI"
+        location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/vX.X.X/gatewayapi-plugin-linux-amd64"
+        args:
+        - "-kubeClientQPS=40"
+        - "-kubeClientBurst=80"
 ```
 
 Notice that this setting applies **only** to the plugin process. The main Argo Rollouts controller is not affected (or any other additional plugins you might have already).
